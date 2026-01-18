@@ -339,17 +339,17 @@ NGINX
 
   Cek dengan:
 
-```bash
-  apachectl -V
-```
+  ```bash
+    apachectl -V
+  ```
 
-Jika output mengandung:
+  Jika output mengandung:
 
-```console
-SERVER_CONFIG_FILE="/etc/apache2/httpd.conf"
-```
+  ```console
+  SERVER_CONFIG_FILE="/etc/apache2/httpd.conf"
+  ```
 
-→ itu Apache bawaan macOS
+  → itu Apache bawaan macOS
 
 ### Langkah 3: 🔴 Mematikan Apache Bawaan
 
@@ -391,6 +391,8 @@ sudo launchctl unload -w /System/Library/LaunchDaemons/org.apache.httpd.plist 2>
 
 ### Langkah 4: Install dan Config Apache
 
+#### Install Apache
+
 ```bash
 brew install httpd
 ```
@@ -400,6 +402,8 @@ Tanpa opsi tambahan, httpd akan diinstal langsung dari binary yang telah dikompi
 ```console
 🍺  /opt/homebrew/Cellar/httpd/2.4.62: 1,664 files, 32.2MB
 ```
+
+Langkah terakhir adalah mengatur agar Apache dari Homebrew otomatis berjalan saat sistem dinyalakan:
 
 ```bash
 brew services start httpd
@@ -419,227 +423,90 @@ Jika browser menampilkan pesan bahwa tidak dapat terhubung ke server, langkah pe
 
 Periksa proses Apache dengan perintah berikut:
 
-### Langkah 1: Pastikan Homebrew Sudah Terinstal
+```bash
+ps -aef | grep httpd
+```
 
-📦 File penting setelah instalasi:
+Jika Apache aktif, Anda akan melihat beberapa proses httpd dalam daftar.
 
-- Konfigurasi utama: /opt/homebrew/etc/nginx/nginx.conf
-- Folder root default: /opt/homebrew/var/www
-- Log error: /opt/homebrew/var/log/nginx/error.log
-
-### Langkah 3: Jalankan Nginx
+Jika tidak muncul atau Anda curiga ada masalah, coba mulai ulang Apache:
 
 ```bash
-# Mulai sebagai layanan latar belakang (auto-start saat login)
-
-brew services start nginx
-
-# Atau jalankan manual (akan berhenti saat terminal ditutup)
-nginx
-
+brew services restart httpd
 ```
 
-### Langkah 4: Uji Instalasi
-
-Buka browser dan kunjungi:
-
-```nginx
-http://localhost:8080
-```
-
-Anda akan melihat halaman selamat datang Nginx: "Welcome to nginx!"
-
-⚠️ Port default Nginx di Homebrew adalah 8080, bukan 80 — agar tidak bentrok dengan layanan lain.
-
-### Langkah 5 : 🔧 Ubah Port ke 80 (Opsional, untuk akses via http://localhost)
-
-Jika ingin akses tanpa :8080, edit file konfigurasi:
+Untuk memantau log kesalahan secara real-time selama proses restart (atau saat mengakses server), buka tab atau jendela Terminal baru dan jalankan:
 
 ```bash
-code /opt/homebrew/etc/nginx/nginx.
+tail -f /opt/homebrew/var/log/httpd/error_log
 ```
 
-Cari baris:
+Log ini sangat membantu untuk mengidentifikasi konfigurasi yang salah, izin file, atau masalah lainnya.
 
-```nginx
-listen     8080;
-```
-
-Ubah menjadi:
-
-```nginx
-listen       80;
-```
-
-Lalu restart Nginx:
+Karena Apache dikelola melalui brew services, berikut beberapa perintah berguna:
 
 ```bash
-brew services restart nginx
+brew services stop httpd      # Menghentikan Apache
+brew services start httpd     # Menjalankan Apache
+brew services restart httpd   # Memulai ulang Apache
 ```
 
-⚠️ Pastikan Apache tidak sedang berjalan!
-Jalankan brew services stop httpd jika sebelumnya pakai Apache.
+#### Konfigurasi Apache
 
-### Langkah 6: 📁 Ubah Document Root (Folder Proyek)
+Sekarang Anda memiliki server web yang berjalan, langkah berikutnya adalah menyesuaikan konfigurasinya agar lebih optimal untuk lingkungan pengembangan lokal.
 
-Secara default, Nginx menampilkan file dari
-
-```apache
-/opt/homebrew/var/www.
-```
-
-Untuk mengarahkannya ke folder Anda (misal ~/Sites):
-
-- Buat folder Sites (jika belum ada):
-
-  ```bash
-  mkdir -p ~/Sites
-  echo "<h1>My Nginx Site</h1>" > ~/Sites/index.html
-  ```
-
-- Edit nginx.conf:
-
-  ```bash
-  server {
-  listen 80;
-  server_name localhost;
-  root /Users/fauzannurrachman/Sites; # ← ganti dengan username Anda
-  index index.html index.htm;
-
-      location / {
-          try_files $uri $uri/ =404;
-      }
-
-  }
-  ```
-
-Restart Nginx:
+Di versi terbaru Homebrew, Apache secara default berjalan di port 8080, bukan port standar HTTP (80). Untuk mengubahnya, Anda perlu mengedit file konfigurasi utama Apache:
 
 ```bash
-brew services restart nginx
+/opt/homebrew/etc/httpd/httpd.conf
 ```
 
-## 🧪 Perintah Berguna untuk Mengelola Nginx
+Jika Anda telah mengikuti langkah instalasi VS Code di atas, Anda bisa langsung membuka file tersebut dari Terminal dengan:
 
-| **Perintah**                                    | **Fungsi**                                                  |
-| ----------------------------------------------- | ----------------------------------------------------------- |
-| `brew services start nginx`                     | Menjalankan Nginx di latar belakang (auto start saat boot). |
-| `brew services stop nginx`                      | Menghentikan layanan Nginx.                                 |
-| `brew services restart nginx`                   | Memulai ulang Nginx.                                        |
-| `nginx -t`                                      | Menguji validitas konfigurasi Nginx.                        |
-| `tail -f /opt/homebrew/var/log/nginx/error.log` | Memantau log error Nginx secara real-time.                  |
-
-## Permasalahan (⚠️ Penting: Jangan Jalankan Apache & Nginx Bersamaan di Port 80)
-
-Menginstal Nginx tidak secara otomatis merusak atau membuat Apache error, namun keduanya bisa bentrok jika dijalankan bersamaan pada port yang sama — terutama port 80 (HTTP) atau 443 (HTTPS).
-
-Keduanya tidak bisa berjalan bersamaan di port yang sama.
-Jika Anda beralih antara keduanya, selalu hentikan yang tidak dipakai:
-
-### Berikut penjelasan lengkapnya:
-
-#### ✅ 1. Instalasi Saja Tidak Masalah
-
-- Anda boleh menginstal Nginx dan Apache sekaligus di macOS (atau sistem lain).
-- Proses instalasi via Homebrew (brew install nginx dan brew install httpd) tidak saling mengganggu.
-- Keduanya akan tinggal di direktori terpisah dan tidak mengubah konfigurasi satu sama lain.
-
-  🔧 Contoh lokasi
-
-  ```bash
-  Apache: /opt/homebrew/etc/httpd/
-  Nginx: /opt/homebrew/etc/nginx/
-  ```
-
-#### ⚠️ 2. Masalah Terjadi Saat Keduanya DIJALANKAN di Port yang Sama
-
-Port 80 (HTTP) hanya bisa dipakai oleh satu layanan dalam satu waktu.
-
-Jika Anda:
-
-Menjalankan Apache di port 80 → lalu
-Menjalankan Nginx di port 80 juga,
-Maka salah satu akan gagal start dengan error seperti:
-
-```text
-Address already in use
+```bash
+code /opt/homebrew/etc/httpd/httpd.conf
 ```
 
-atau
+jika code belum teridentifikasi
 
-```text
-bind() to 0.0.0.0:80 failed (48: Address already in use)
+```console
+zsh: command not found: code
 ```
 
-#### ✅ Solusi: Jangan Jalankan Keduanya Secara Bersamaan
+- ✅ Langkah 1: Buka VS Code
+  Pastikan VS Code sudah terinstal di Mac kamu.
+- ✅ Langkah 2: Buka Command Palette di VS Code
+  - Buka VS Code.
+  - Tekan Cmd + Shift + P untuk membuka Command Palette.
+  - Ketik:
 
-Anda punya beberapa pilihan:
-
-- Opsi A: Gunakan salah satu saja (disarankan untuk pengembangan lokal)
-  - Jika Anda sedang pakai Apache → hentikan Nginx:
-
-  - Jika beralih ke Nginx → hentikan Apache:
-
-    ```bash
-    brew services stop nginx
+    ```text
+    Shell Command: Install 'code' command in PATH
     ```
 
-- Jika beralih ke Nginx → hentikan Apache:
+    Pilih opsi tersebut dan tekan Enter.
+    VS Code akan secara otomatis membuat symlink ke
 
-  ```bash
-  brew services stop httpd
-  ```
-
-- Opsi B: Jalankan di port berbeda
-
-  Misalnya:
-  - Apache tetap di port 80
-  - Nginx di port 8080
-
-    ```apache
-    Ubah konfigurasi Nginx (/opt/homebrew/etc/nginx/nginx.conf):
+    ```text
+    /usr/local/bin/code
     ```
 
-    Lalu akses via http://localhost:8080.
+    (atau lokasi yang sesuai) agar perintah code bisa dikenali di terminal.
 
-- Opsi C: Gunakan reverse proxy (lanjutan)
+- ✅ Langkah 3: Restart Terminal atau Reload Shell
+  Setelah itu, tutup dan buka kembali terminal, atau reload konfigurasi shell dengan perintah:
 
-  Nginx di depan sebagai reverse proxy, meneruskan permintaan ke Apache di port berbeda (misal 8080).
+  ```bash
+  source ~/.zshrc
+  ```
 
-  Ini jarang diperlukan untuk pengembangan lokal, tapi umum di produksi.
+  (Karena kamu menggunakan ZSH — yang merupakan default di macOS modern — file konfigurasinya biasanya ~/.zshrc. Jika belum ada, VS Code biasanya menambahkan PATH-nya langsung ke profil yang relevan.)
 
-### 🔍 Cara Cek Layanan yang Sedang Pakai Port 80
+- ✅ Langkah 4: Coba Lagi
+  Ketik di terminal:
 
-```bash
-sudo lsof -i :80
-```
+  ```bash
+  code .
+  ```
 
-Output akan menunjukkan proses (Apache/Nginx) yang sedang mendengarkan di port 80.
-
-## 💡 Kapan Harus Pakai Nginx?
-
-Gunakan Nginx jika Anda:
-
-- Mengembangkan aplikasi React, Vue, Angular (frontend modern)
-- Membuat REST API dengan PHP/Laravel, Node.js, Python
-- Ingin performa tinggi dan konsumsi memori rendah
-- Tidak bergantung pada .htaccess
-- Gunakan Apache jika Anda:
-  - Masih pakai WordPress, Laravel lama, atau sistem yang butuh .htaccess
-  - Lebih nyaman dengan modul seperti mod_php
-
-## ✅ Kesimpulan
-
-- Nginx = cepat, ringan, modern.
-- Di macOS, instal via Homebrew (brew install nginx).
-- Default port = 8080 → ubah ke 80 jika perlu.
-- Jangan jalankan bersamaan dengan Apache di port yang sama.
-- Sangat cocok untuk pengembangan web modern!
-  Jika Anda ingin contoh konfigurasi untuk Laravel, WordPress, atau React, beri tahu — saya siap bantu!
-- ❌ Tidak, menginstal Nginx tidak membuat Apache error.
-- ✅ Tapi, menjalankan keduanya secara bersamaan di port yang sama akan menyebabkan konflik port, sehingga salah satu gagal jalan.
-  Dengan begitu, lingkungan Anda tetap stabil dan bebas error.
-
-```
-
-```
+  Harusnya sekarang berhasil membuka folder saat ini di VS Code.
