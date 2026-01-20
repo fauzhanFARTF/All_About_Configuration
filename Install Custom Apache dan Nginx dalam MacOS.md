@@ -1,61 +1,66 @@
-# Install Custom Apache dan Nginx dalam MacOS
+# Install Custom Apache dan Nginx di macOS
 
-## ✨Pendahuluan
+## ✨ Pendahuluan
 
-Pada macOS versi terbaru (termasuk macOS Sequoia 15.x), apache sebenarnya sudah tersedia secara bawaan (built-in). Namun, versi bawaan ini memiliki keterbatasan, terutama dalam hal fleksibilitas konfigurasi, manajemen versi PHP, dan integrasi dengan workflow modern seperti multi PHP version, Homebrew, serta kebutuhan pengembangan web masa kini.
+Pada macOS versi terbaru (termasuk **macOS Sequoia 15.x**), Apache sebenarnya sudah tersedia secara bawaan (_built-in_). Namun, Apache bawaan ini memiliki keterbatasan, terutama dalam hal:
 
-Dokumentasi ini dibuat untuk menjelaskan cara menginstall dan mengkonfigurasi Apache dan Nginx secara custom menggunakan Homebrew pada macOS, sehingga:
+- Fleksibilitas konfigurasi
+- Manajemen **multiple PHP version**
+- Integrasi dengan workflow modern (Homebrew, Docker, multi-project)
 
-- Apache dan Nginx dapat berjalan berdampingan (tidak saling bentrok).
-- Mendukung multiple PHP versions (PHP 7.x, 8.x, dst) dan mudah berpindah versi.
+Dokumentasi ini dibuat untuk menjelaskan cara **menginstal dan mengonfigurasi Apache dan Nginx secara custom menggunakan Homebrew**, sehingga:
+
+- Apache dan Nginx dapat berjalan **berdampingan tanpa konflik**
+- Mendukung **multiple PHP version** (PHP 7.x, 8.x, dst)
 - Root project dapat diarahkan ke direktori user, misalnya:
 
-```console
-  /Users/fauzannurrachman/Developer/index.php
+```text
+/Users/fauzannurrachman/Developer/index.php
 ```
 
-- Developer dapat memilih web server (Apache atau Nginx) sesuai kebutuhan proyek.
-- Lingkungan development menjadi lebih bersih, terkontrol, dan konsisten.
+- Developer dapat memilih web server (**Apache atau Nginx**) sesuai kebutuhan proyek
+- Lingkungan development lebih bersih, terkontrol, dan konsisten
 
-Panduan ini mengacu pada pendekatan modern menggunakan Homebrew, serta referensi dari artikel berikut:
+Panduan ini terinspirasi dari artikel:
 
-```apache
+```text
 macOS Sequoia: Apache with Multiple PHP Versions – getgrav.org
 ```
 
-Namun dokumentasi ini tidak hanya menyalin, melainkan menyederhanakan dan menyesuaikan dengan kebutuhan developer yang ingin:
+Namun dokumentasi ini telah **disederhanakan dan disesuaikan** untuk kebutuhan developer yang ingin:
 
-Menjalankan Apache dan Nginx secara paralel
-
+- Menjalankan Apache & Nginx secara paralel
 - Mengelola PHP secara fleksibel
 - Menghindari konflik port
-- Menggunakan struktur project lokal yang rapi dan mudah dipindahkan
+- Menggunakan struktur project lokal yang rapi
 
-Dengan mengikuti dokumentasi ini, diharapkan setup web server di macOS menjadi lebih profesional, modular, dan siap untuk berbagai kebutuhan project, baik berbasis Apache maupun Nginx.
+---
 
 ## ✨ Tujuan & Arsitektur Setup
 
 ### 📦 Tujuan
 
-Setup ini bertujuan untuk menyediakan lingkungan web development fleksibel di macOS dengan karakteristik berikut:
+Setup ini bertujuan menyediakan lingkungan web development fleksibel di macOS dengan karakteristik:
 
 - Apache dan Nginx berjalan berdampingan
-- Mendukung multi PHP version (PHP 7.x / 8.x)
-- Mudah berpindah web server sesuai kebutuhan project
-- Root project berada di direktori user (bukan /Library/WebServer)
-- Menghindari konflik port & service bawaan macOS
+- Mendukung multi PHP version
+- Mudah berpindah web server per proyek
+- Root project berada di direktori user
+- Tidak bentrok dengan service bawaan macOS
 
 ### 📦 Arsitektur Umum
 
-- Apache → cocok untuk .htaccess, legacy app, CMS
-- Nginx → cocok untuk API, high performance, reverse proxy
-- PHP-FPM → shared service untuk Apache & Nginx
+- **Apache** → cocok untuk `.htaccess`, legacy app, CMS
+- **Nginx** → cocok untuk API, high performance, reverse proxy
+- **PHP-FPM** → shared service untuk Apache & Nginx
 
-### 📦 File penting setelah instalasi:
+### 📦 Lokasi File Penting (Nginx)
 
-- Konfigurasi utama: /opt/homebrew/etc/nginx/nginx.conf
-- Folder root default: /opt/homebrew/var/www
-- Log error: /opt/homebrew/var/log/nginx/error.log
+- Config utama: `/opt/homebrew/etc/nginx/nginx.conf`
+- Root default: `/opt/homebrew/var/www`
+- Log error: `/opt/homebrew/var/log/nginx/error.log`
+
+---
 
 ## 🧩 Diagram Port Apache vs Nginx
 
@@ -70,7 +75,7 @@ APACHE
        │ http://localhost:80
        │
 ┌──────▼───────────────┐
-│ Apache (port 80)   │
+│ Apache (port 80)     │
 │ DocumentRoot:        │
 │ /Users/.../Developer │
 └────────┬─────────────┘
@@ -95,7 +100,9 @@ NGINX
      PHP 8.x / 7.x
 ```
 
-## Struktur Direktori Folder
+---
+
+## 📂 Struktur Direktori Project
 
 ```text
 /Users/fauzannurrachman/Developer
@@ -107,241 +114,131 @@ NGINX
     └── nginx/
 ```
 
-### index-apache.html
+---
 
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>It works! - Apache HTTP Server</title>
-    <style>
-      body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
-          sans-serif;
-        background-color: #f6f6f6;
-        margin: 0;
-        padding: 40px;
-      }
-      .container {
-        background: #ffffff;
-        padding: 30px;
-        max-width: 720px;
-        margin: auto;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      }
-      h1 {
-        color: #b24926;
-      }
-      code {
-        background: #f0f0f0;
-        padding: 4px 6px;
-        border-radius: 4px;
-      }
-      footer {
-        margin-top: 30px;
-        font-size: 14px;
-        color: #777;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>It works!</h1>
+## 🛠 Cara Menginstal Apache & Nginx di macOS (Homebrew)
 
-      <p>Apache HTTP Server is installed and working properly.</p>
+### Langkah 1: Install Homebrew
 
-      <p>This page is served from:</p>
-
-      <p>
-        <code>/Users/fauzannurrachman/Developer/</code>
-      </p>
-
-      <p>
-        If you can see this page, Apache is successfully configured to serve web
-        content.
-      </p>
-
-      <footer>
-        <hr />
-        <p>
-          Apache HTTP Server<br />
-          Homebrew on macOS
-        </p>
-      </footer>
-    </div>
-  </body>
-</html>
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### index-nginx
+---
 
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Welcome to nginx!</title>
-    <style>
-      body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Welcome to nginx!</h1>
-    <p>
-      If you see this page, the nginx web server is successfully installed and
-      working. Further configuration is required.
-    </p>
+### Langkah 2: Pengecekan Apache Bawaan macOS dan Homebrew
 
-    <p>
-      For online documentation and support please refer to
-      <a href="http://nginx.org/">nginx.org</a>.<br />
-      Commercial support is available at
-      <a href="http://nginx.com/">nginx.com</a>.
-    </p>
+Lakukan pengecekan Apache bawaan macOS terlebih dahulu untuk memastikan tidak terjadi konflik.
 
-    <p><em>Thank you for using nginx.</em></p>
-  </body>
-</html>
-```
+➡️ **Lihat dokumentasi:**  
+[Langkah 2 – Pengecekan Apache Bawaan macOS dan Homebrew](https://github.com/fauzhanFARTF/All_About_Configuration/blob/main/Install%20Custom%20Apache%20dan%20Nginx%20dalam%20MacOS.md#:~:text=Pengecekan-,Apache,-Bawaan%20macOS)
 
-### info.php
+---
 
-```php
-<?php phpinfo();
-```
-
-## 🛠 Cara Menginstal Apache & Nginx di macOS (via Homebrew)
-
-- ### Langkah 1: Install Homebrew
-
-  ```bash
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  ```
-
-- ### Langkah 2: Pengecekan Apache Bawaan MacOS
-
-  Dapat dilihat di link ini
-
-- ### Langkah 3: 🔴 Mematikan Apache Bawaan
-
-Disarankan DIMATIKAN jika kamu pakai Apache Homebrew.
+### Langkah 3: 🔴 Mematikan Apache Bawaan macOS (Disarankan)
 
 ```bash
 sudo apachectl stop
 ```
 
-lalu Nonaktifkan permanen:
+Nonaktifkan permanen:
 
 ```bash
 sudo launchctl unload -w /System/Library/LaunchDaemons/org.apache.httpd.plist
 ```
 
-atau
+Atau versi bersih (tanpa error output):
 
 ```bash
 sudo launchctl unload -w /System/Library/LaunchDaemons/org.apache.httpd.plist 2>/dev/null
 ```
 
-- sudo → jalankan sebagai root
-- launchctl unload → hentikan service
-- -w → menandai agar tidak otomatis jalan lagi saat boot
-- org.apache.httpd.plist → Apache bawaan macOS
-- 2 → stderr (error output)
-- \> /dev/null → buang error ke 'tempat sampah' Error TIDAK ditampilkan di terminal
+**Penjelasan singkat:**
 
-🔍 Jadi bedanya ?
+- `sudo` → jalankan sebagai root
+- `launchctl unload` → hentikan service
+- `-w` → nonaktif permanen
+- `2>/dev/null` → sembunyikan pesan error
 
-| Aspek              | Tanpa `2>/dev/null` | Dengan `2>/dev/null` |
-| ------------------ | ------------------- | -------------------- |
-| Fungsi utama       | Sama                | Sama                 |
-| Apache dimatikan   | ✅                  | ✅                   |
-| Permanen disable   | ✅                  | ✅                   |
-| Error ditampilkan  | ✅                  | ❌                   |
-| Cocok untuk script | ❌                  | ✅                   |
-| Terminal bersih    | ❌                  | ✅                   |
+---
 
-### Langkah 4: Install dan Config Apache
-
-#### Install Apache
+### Langkah 4: Install Apache (Homebrew)
 
 ```bash
 brew install httpd
 ```
 
-Tanpa opsi tambahan, httpd akan diinstal langsung dari binary yang telah dikompilasi, sehingga prosesnya cepat. Setelah selesai, Anda akan melihat pesan seperti:
-
-```console
-🍺  /opt/homebrew/Cellar/httpd/2.4.62: 1,664 files, 32.2MB
-```
-
-Langkah terakhir adalah mengatur agar Apache dari Homebrew otomatis berjalan saat sistem dinyalakan:
+Aktifkan sebagai service:
 
 ```bash
 brew services start httpd
 ```
 
-Kini Anda telah berhasil menginstal Apache versi Homebrew dan mengonfigurasinya untuk otomatis berjalan dengan hak akses yang sesuai. Layanan Apache tersebut seharusnya sudah aktif. Untuk memverifikasi, buka browser dan kunjungi:
+Cek di browser:
 
-```apache
+```text
 http://localhost:8080
 ```
 
-Anda akan melihat halaman sederhana dengan tulisan "It works!" — tanda bahwa server Apache berjalan dengan baik.
+Jika muncul **"It works!"**, Apache Homebrew sudah berjalan.
 
-Tips Pemecahan Masalah
+---
 
-Jika browser menampilkan pesan bahwa tidak dapat terhubung ke server, langkah pertama adalah memastikan bahwa server Apache benar-benar sedang berjalan.
+### 🔧 Troubleshooting Apache
 
-Periksa proses Apache dengan perintah berikut:
+Cek proses:
 
 ```bash
 ps -aef | grep httpd
 ```
 
-Jika Apache aktif, Anda akan melihat beberapa proses httpd dalam daftar.
-
-Jika tidak muncul atau Anda curiga ada masalah, coba mulai ulang Apache:
+Restart service:
 
 ```bash
 brew services restart httpd
 ```
 
-Untuk memantau log kesalahan secara real-time selama proses restart (atau saat mengakses server), buka tab atau jendela Terminal baru dan jalankan:
+Pantau log error:
 
 ```bash
 tail -f /opt/homebrew/var/log/httpd/error_log
 ```
 
-Log ini sangat membantu untuk mengidentifikasi konfigurasi yang salah, izin file, atau masalah lainnya.
+---
 
-Karena Apache dikelola melalui brew services, berikut beberapa perintah berguna:
+### Langkah 5: Konfigurasi Apache
 
-```bash
-brew services stop httpd      # Menghentikan Apache
-brew services start httpd     # Menjalankan Apache
-brew services restart httpd   # Memulai ulang Apache
-```
+File konfigurasi utama:
 
-#### Konfigurasi Apache
-
-Sekarang Anda memiliki server web yang berjalan, langkah berikutnya adalah menyesuaikan konfigurasinya agar lebih optimal untuk lingkungan pengembangan lokal.
-
-Di versi terbaru Homebrew, Apache secara default berjalan di port 8080, bukan port standar HTTP (80). Untuk mengubahnya, Anda perlu mengedit file konfigurasi utama Apache:
-
-```bash
+```text
 /opt/homebrew/etc/httpd/httpd.conf
 ```
 
-Jika Anda telah mengikuti langkah instalasi VS Code di atas, Anda bisa langsung membuka file tersebut dari Terminal dengan:
+Buka dengan VS Code:
 
 ```bash
 code /opt/homebrew/etc/httpd/httpd.conf
 ```
 
-jika code belum teridentifikasi ikut langkah berikut di link ini
+> ⚠️ Jika perintah `code` belum dikenali, ikuti dokumentasi **Install code command di PATH**.
+
+➡️ **Lihat dokumentasi:**  
+[Install code command di PATH](https://github.com/fauzhanFARTF/All_About_Configuration/blob/main/Install%20Custom%20Apache%20dan%20Nginx%20dalam%20MacOS.md#:~:text=Pengecekan-,Apache,-Bawaan%20macOS)
+
+---
+
+## ✅ Penutup
+
+Dengan setup ini:
+
+- Apache & Nginx tidak saling bentrok
+- PHP bisa dikelola multi versi
+- Root project lebih rapi
+- Setup siap untuk project skala kecil hingga kompleks
+
+Dokumentasi selanjutnya akan membahas:
+
+- Install Nginx
+- Konfigurasi PHP-FPM
+- Switch PHP version
+- Virtual Host Apache & Server Block Nginx
