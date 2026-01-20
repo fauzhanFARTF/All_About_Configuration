@@ -223,7 +223,7 @@ code /opt/homebrew/etc/httpd/httpd.conf
 > ⚠️ Jika perintah `code` belum dikenali, ikuti dokumentasi **Install code command di PATH**.
 
 ➡️ **Lihat dokumentasi:**  
-[Install code command di PATH](https://github.com/fauzhanFARTF/All_About_Configuration/blob/main/Install%20Custom%20Apache%20dan%20Nginx%20dalam%20MacOS.md#:~:text=Pengecekan-,Apache,-Bawaan%20macOS)
+[Install code command di PATH](https://github.com/fauzhanFARTF/All_About_Configuration/blob/main/Install%20Custom%20Apache%20dan%20Nginx%20dalam%20MacOS.md#:~:text=Mengatasi%20Error%20%60zsh%3A-,command,-not%20found%3A%20code)
 
 ---
 
