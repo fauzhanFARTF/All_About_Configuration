@@ -208,22 +208,170 @@ tail -f /opt/homebrew/var/log/httpd/error_log
 
 ### Langkah 5: Konfigurasi Apache
 
+Sekarang setelah web server kita berjalan dengan baik, hal berikutnya yang ingin kita lakukan adalah melakukan beberapa perubahan konfigurasi agar Apache bekerja lebih optimal sebagai local development server.
+
+Pada versi terbaru Homebrew, kamu harus mengatur port listen secara manual dari default 8080 menjadi 80, sehingga kita perlu mengedit file konfigurasi Apache berikut:
+
 File konfigurasi utama:
 
 ```text
 /opt/homebrew/etc/httpd/httpd.conf
 ```
 
-Buka dengan VS Code:
+Jika kamu mengikuti instruksi sebelumnya, kamu seharusnya bisa menggunakan Visual Studio Code untuk mengedit file menggunakan perintah code di Terminal. Namun, jika ingin menggunakan aplikasi TextEditor bawaan macOS, kamu bisa memakai perintah open -e diikuti dengan path file.
+
+1. Buka dengan VS Code:
+
+   ```bash
+   code /opt/homebrew/etc/httpd/httpd.conf
+   ```
+
+   > ⚠️ Jika perintah `code` belum dikenali, ikuti dokumentasi.
+
+   ➡️ **Lihat dokumentasi:**
+   [Install code command di PATH](https://github.com/fauzhanFARTF/All_About_Configuration/blob/main/Install%20Custom%20Apache%20dan%20Nginx%20dalam%20MacOS.md#:~:text=Mengatasi%20Error%20%60zsh%3A-,command,-not%20found%3A%20code)
+
+2. Cari baris berikut:
+
+   ```yaml
+   Listen 8080
+   ```
+
+   Lalu ganti dengan
+
+   ```yaml
+   Listen 80
+   ```
+
+### Langkah 6 : Mengubah Document Root Apache
+
+Selanjutnya, kita akan mengonfigurasi Document Root Apache. Ini adalah folder tempat Apache mengambil file yang akan disajikan.
+
+Secara default, document root diatur ke:
 
 ```bash
-code /opt/homebrew/etc/httpd/httpd.conf
+/opt/homebrew/var/www
+
 ```
 
-> ⚠️ Jika perintah `code` belum dikenali, ikuti dokumentasi **Install code command di PATH**.
+Karena ini adalah mesin pengembangan, kita akan mengubah document root agar menunjuk ke folder di dalam home directory kita.
+
+Cari kata DocumentRoot, lalu kamu akan menemukan baris berikut:
+
+```apache
+DocumentRoot "/opt/homebrew/var/www"
+```
+
+Ubah menjadi (ganti your_user dengan username kamu):
+
+```bash
+DocumentRoot "/Users/fauzannurrachman/Developer"
+```
+
+Kamu juga perlu mengubah referensi tag \<Directory> tepat di bawah baris DocumentRoot agar sesuai dengan document root baru:
+
+```apache
+<Directory "/Users/fauzannurrachman/Sites">
+```
+
+Di dalam blok \<Directory> yang sama, kamu akan menemukan pengaturan AllowOverride. Ubah menjadi seperti berikut:
+
+```graphql
+#
+# AllowOverride mengontrol directive apa saja yang boleh
+# diletakkan di file .htaccess.
+# Bisa berupa "All", "None", atau kombinasi keyword:
+#   AllowOverride FileInfo AuthConfig Limit
+#
+AllowOverride All
+```
+
+### Langkah 7 : Mengaktifkan mod_rewrite
+
+Selanjutnya, kita perlu mengaktifkan mod_rewrite yang secara default dalam keadaan dikomentari.
+
+Cari mod_rewrite.so, lalu hapus tanda # di depannya (di VS Code bisa dengan menekan ⌘ + /):
+
+```bash
+LoadModule rewrite_module lib/httpd/modules/mod_rewrite.so
+```
+
+### Langkah 8 : User & Group
+
+Sekarang Apache sudah menunjuk ke folder Sites di home directory kita. Namun, masih ada satu masalah.
+
+Secara default, Apache berjalan dengan user
+
+```bash
+\_www dan group \_www.
+```
+
+Ini bisa menyebabkan masalah izin (permission) saat mengakses file di home directory.
+
+Sekitar sepertiga bagian atas file httpd.conf, cari pengaturan User dan Group, lalu ubah menjadi (ganti your_user dengan username kita):
+
+```bash
+User your_user
+Group staff
+```
+
+contoh
+
+```bash
+User fauzannurrachman
+Group staff
+```
+
+### Langkah 9 : ServerName
+
+Apache membutuhkan ServerName dalam konfigurasi, namun secara default dinonaktifkan.
+
+Cari baris berikut:
+
+```grahql
+#ServerName www.example.com:8080
+```
+
+Lalu ganti menjadi:
+
+```bash
+ServerName localhost
+```
+
+### Folder Developer
+
+Sekarang, buat folder Sites di root home directory kamu. Ini bisa dilakukan lewat Terminal atau Finder.
+
+Di dalam folder Developer, buat file index-apache.html sederhana dengan isi dummy seperti berikut:
 
 ➡️ **Lihat dokumentasi:**  
-[Install code command di PATH](https://github.com/fauzhanFARTF/All_About_Configuration/blob/main/Install%20Custom%20Apache%20dan%20Nginx%20dalam%20MacOS.md#:~:text=Mengatasi%20Error%20%60zsh%3A-,command,-not%20found%3A%20code)
+[File index-apache.html]()
+
+Perintah Terminal:
+
+mkdir ~/Sites
+echo "<h1>My User Web Root</h1>" > ~/Sites/index.html
+
+Restart Apache
+
+Restart Apache agar perubahan konfigurasi diterapkan:
+
+brew services stop httpd
+brew services start httpd
+
+Jika kamu mendapatkan error saat restart Apache, coba hapus tanda kutip (") pada pengaturan DocumentRoot dan <Directory> yang sebelumnya kita ubah.
+
+Pengujian
+
+Buka browser dan akses:
+
+http://localhost
+
+Jika berhasil, kamu akan melihat pesan baru yang tadi dibuat.
+
+Pastikan kamu menghapus port :8080 yang sebelumnya digunakan. Selain itu, mungkin kamu perlu melakukan Shift + Reload untuk membersihkan cache browser agar file terbaru dimuat.
+
+Jika semuanya sudah berjalan, kita bisa lanjut ke tahap berikutnya 🚀
 
 ---
 
@@ -242,3 +390,15 @@ Dokumentasi selanjutnya akan membahas:
 - Konfigurasi PHP-FPM
 - Switch PHP version
 - Virtual Host Apache & Server Block Nginx
+
+```
+
+```
+
+```
+
+```
+
+```
+
+```
